@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tessera · 366 animated React widgets</title>
+    <meta name="description" content="Tessera is a kit of 366 live, animated React widgets for dashboards and control panels, in light and dark." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // Set the theme class before first paint, so a light page never flashes dark
+      // and colour transitions never start from the wrong theme.
+      (function () {
+        var t = new URLSearchParams(location.search).get("theme");
+        var dark = t === "light" ? false : t === "auto" ? matchMedia("(prefers-color-scheme: dark)").matches : true;
+        document.documentElement.classList.add(dark ? "dark" : "light");
+        document.documentElement.style.colorScheme = dark ? "dark" : "light";
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

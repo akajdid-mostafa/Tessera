@@ -1,0 +1,231 @@
+@layer theme, base, antd, antdx, components, utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./registry/antuikit/styles/antuikit.css";
+
+/* Widget surface tokens. Derived from antd tokens so a theme swap carries
+ * through; the dark values lift the container a step off the page the way
+ * iOS widgets sit on the wallpaper. */
+:root {
+  --widget-page: #f2f2f7;
+  --widget-surface: #ffffff;
+  --widget-ring: rgb(0 0 0 / 0.06);
+  --chip-bg: #1c1c1e;
+  --chip-fg: #ffffff;
+}
+:root.dark {
+  --widget-page: #000;
+  --widget-surface: #1c1c1e;
+  --widget-ring: rgb(255 255 255 / 0.07);
+  --chip-bg: #ffffff;
+  --chip-fg: #000000;
+}
+
+/* Apple system colors, light and dark. Widgets use them for data accents;
+ * neutrals and surfaces stay on antd tokens. */
+:root {
+  --ios-blue: #007aff;
+  --ios-green: #34c759;
+  --ios-red: #ff3b30;
+  --ios-orange: #ff9500;
+  --ios-yellow: #ffcc00;
+  --ios-purple: #af52de;
+  --ios-pink: #ff2d55;
+  --ios-teal: #30b0c7;
+  --ios-indigo: #5856d6;
+  --ios-mint: #00c7be;
+}
+:root.dark {
+  --ios-blue: #0a84ff;
+  --ios-green: #30d158;
+  --ios-red: #ff453a;
+  --ios-orange: #ff9f0a;
+  --ios-yellow: #ffd60a;
+  --ios-purple: #bf5af2;
+  --ios-pink: #ff375f;
+  --ios-teal: #40c8e0;
+  --ios-indigo: #5e5ce6;
+  --ios-mint: #63e6e2;
+}
+
+/* On a white surface these five read under 2.6:1 as TEXT, while their fills and
+ * strokes are fine. So only the text utilities get a deeper shade in light mode
+ * (≥3.4:1 on white); bars, rings and dots keep the vivid system color. */
+:root.light .text-ios-orange {
+  color: #c97500;
+}
+:root.light .text-ios-yellow {
+  color: #a88600;
+}
+:root.light .text-ios-green {
+  color: #299f47;
+}
+:root.light .text-ios-teal {
+  color: #2997ab;
+}
+:root.light .text-ios-mint {
+  color: #009b94;
+}
+
+/* Solid accent fills that carry white text or a white glyph (labels over charts,
+ * badges on yellow/mint). The vivid system color is too light for white on it,
+ * so these mix it toward black. */
+.bg-ios-green-deep { background-color: color-mix(in oklab, var(--ios-green), black 32%); }
+.bg-ios-orange-deep { background-color: color-mix(in oklab, var(--ios-orange), black 28%); }
+.bg-ios-yellow-deep { background-color: color-mix(in oklab, var(--ios-yellow), black 42%); }
+.bg-ios-teal-deep { background-color: color-mix(in oklab, var(--ios-teal), black 32%); }
+.bg-ios-mint-deep { background-color: color-mix(in oklab, var(--ios-mint), black 40%); }
+
+/* Selected-cell outline: a thin inset edge that deepens whatever fill sits under
+ * it, so a selected cell reads as a darker shade of its own color, never a hard
+ * black or white border. */
+.ring-sel { --tw-ring-color: rgb(0 0 0 / 0.28); }
+:root.dark .ring-sel { --tw-ring-color: rgb(255 255 255 / 0.55); }
+
+/* A 16px glyph crowds a 24px button: small buttons draw their Fluent icons at
+ * 14px. In the base layer, so a widget's own size-* utility still wins. */
+@layer base {
+  .ant-btn-sm svg.fui-Icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@theme inline {
+  --color-ios-blue: var(--ios-blue);
+  --color-ios-green: var(--ios-green);
+  --color-ios-red: var(--ios-red);
+  --color-ios-orange: var(--ios-orange);
+  --color-ios-yellow: var(--ios-yellow);
+  --color-ios-purple: var(--ios-purple);
+  --color-ios-pink: var(--ios-pink);
+  --color-ios-teal: var(--ios-teal);
+  --color-ios-indigo: var(--ios-indigo);
+  --color-ios-mint: var(--ios-mint);
+  --color-widget-page: var(--widget-page);
+  --color-widget-surface: var(--widget-surface);
+  --color-widget-ring: var(--widget-ring);
+}
+
+/* The glow's sweep angle, registered so it can be animated as an angle. */
+@property --glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes glow-spin {
+  to {
+    --glow-angle: 360deg;
+  }
+}
+
+/* Widgets are designed for a 196px cell, like Apple's fixed widget sizes. The
+ * breakpoints (n*196 + (n-1)*16) keep every cell at exactly 196px from three
+ * columns up; only the two-column phone layout may shrink it.
+ *
+ * Showcase grids. Cells are square and sized from the shelf's own width, so a
+ * small widget stays square whether the sidebar is open or not. `bento` packs
+ * widgets edge to edge; `gallery` is Apple's widget gallery, each widget at its
+ * real family size with its name and one line under it (rows grow to fit).
+ * Defaults come first so the container queries below can override them. */
+.shelf-grid {
+  container-type: inline-size;
+}
+.bento,
+.gallery {
+  --cols: 2;
+  --cell: min(196px, calc((100cqw - (var(--cols) - 1) * 16px) / var(--cols)));
+  display: grid;
+  grid-auto-flow: dense;
+  grid-template-columns: repeat(var(--cols), var(--cell));
+}
+.bento {
+  /* The dashboard keeps real 196px cells (stretched columns clipped widgets) and
+   * only ever runs 4 columns, or 2 when 4 don't fit: the hero picks widgets whose
+   * area is a multiple of 4, so both fill to a clean rectangle. */
+  grid-auto-rows: var(--cell);
+  gap: 16px;
+  justify-content: center;
+}
+.gallery {
+  /* Rows are one cell tall; the row gap leaves room for each card's title. */
+  align-items: start;
+  grid-auto-rows: var(--cell);
+  gap: 52px 16px;
+  padding-bottom: 36px;
+}
+.gallery-box {
+  display: grid;
+  grid-auto-rows: var(--cell);
+  gap: 16px;
+}
+@container (min-width: 620px) {
+  .gallery {
+    --cols: 3;
+  }
+}
+@container (min-width: 832px) {
+  .bento,
+  .gallery {
+    --cols: 4;
+  }
+  /* The hero computes a mixed 4-column layout and pins each widget to its cell. */
+  .bento > [style*="--c"] {
+    grid-column-start: var(--c);
+    grid-row-start: var(--r);
+  }
+}
+@container (min-width: 1044px) {
+  .gallery {
+    --cols: 5;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+html,
+body {
+  background: var(--widget-page);
+  -webkit-font-smoothing: antialiased;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter",
+    "Segoe UI", system-ui, sans-serif;
+}
+
+/* Tiny scrollbars everywhere (page, sidebar, inspector, code), hidden until needed:
+ * a 6px rounded thumb that shows only while its box is being scrolled (main.tsx
+ * sets `data-scrolling`) or, for inner boxes, hovered. WebKit/Blink take the
+ * pseudo-elements; Firefox, which has none, gets the standard thin bar instead
+ * (setting both would make Chrome drop the pseudo-elements for its wider "thin"). */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: transparent;
+}
+[data-scrolling]::-webkit-scrollbar-thumb,
+:not(html, body):hover::-webkit-scrollbar-thumb {
+  background: var(--ant-color-fill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ant-color-text-quaternary);
+}
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  [data-scrolling],
+  :not(html, body):hover {
+    scrollbar-color: var(--ant-color-fill) transparent;
+  }
+}
